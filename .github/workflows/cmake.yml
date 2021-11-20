@@ -19,7 +19,7 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - run: sudo apt-get update && sudo apt install libsdl2-dev
+            - run: sudo apt-get update && sudo apt install libsdl2-dev && sudo apt install libvulkan1 mesa-vulkan-drivers vulkan-utils
             - uses: actions/checkout@v2
 
             - name: Configure CMake
