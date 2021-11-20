@@ -1,0 +1,11 @@
+#include "../types.h"
+
+struct OBJECT{
+    Type type;
+    char * name;
+};
+
+struct OBJECT_T{
+    Object * obj;
+    Object_t * obj_next;
+};

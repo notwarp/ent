@@ -1,0 +1,12 @@
+#include "../types.h"
+
+struct EVENT
+{
+    Type type;
+    void (*initEvent)(Event *evt);
+};
+
+struct EVENT_T{
+    Event * evt;
+    Event_t * evt_next;
+};

@@ -1,0 +1,6 @@
+add_library(window OBJECT window.c)
+find_package(SDL2 REQUIRED)
+include_directories(${SDL2_INCLUDE_DIRS})
+find_package(Vulkan REQUIRED)
+target_link_libraries(window PUBLIC uuid ${SDL2_LIBRARIES} ${Vulkan_LIBRARIES})
+target_include_directories(window PUBLIC ${Vulkan_INCLUDE_DIR})

@@ -1,0 +1,23 @@
+#include "../types/types.h"
+
+struct VERSION_T{
+    int major;
+    int minor;
+    int patch;
+};
+
+struct WINDOW {
+    Type type;
+    char * name;
+    SDL_Window *sdlWin;
+    VkApplicationInfo appInfo;
+    VkInstanceCreateInfo createInstanceInfo;
+    VkInstance inst;
+    VkSurfaceKHR surface;
+    VkResult res;
+};
+
+struct WINDOW_T {
+    Win * win;
+    Win_t * win_next;
+};

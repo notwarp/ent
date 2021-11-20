@@ -1,0 +1,11 @@
+#include "../types.h"
+
+struct CONTAINER {
+    Type type;
+    char * name;
+};
+
+struct CONTAINER_T {
+    Container * container;
+    Container_t * container_next;
+};

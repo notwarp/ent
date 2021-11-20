@@ -1,0 +1,1 @@
+add_library(container OBJECT container.c)
