@@ -19,7 +19,7 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - run: sudo apt install libsdl2-dev
+            - run: apt-get update && apt install libsdl2-dev
             - uses: actions/checkout@v2
 
             - name: Configure CMake
