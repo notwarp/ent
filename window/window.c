@@ -73,7 +73,7 @@ void destroyWindow(Win *win) {
     Debug printSuccess("WINDOW DESTROYED SUCCESSFULLY!");
 }
 
-bool testInitSysWindow(){
+bool testInitSysWindow() {
     Debug printPrimary("UNIT TESTS WINDOW INITIALIZED...");
     Debug printPrimary("CREATING WINDOW...");
     Win *win = createWindow();
@@ -85,6 +85,13 @@ bool testInitSysWindow(){
     }else{
         Debug printError("VULKAN INSTANCE CREATION FAILED!");
     }
+
+    if (pickPhysicalDevice(win)){
+        Debug printSuccess("VULKAN PHYSICAL DEVICE SUCCESSFULLY!");
+    }else{
+        Debug printError("VULKAN PHYSICAL DEVICE FAILED!");
+    }
+
     if (createSurface(win)){
         Debug printSuccess("VULKAN SURFACE CREATED SUCCESSFULLY!");
     }else{
@@ -105,8 +112,8 @@ void cleanWindowList() {
         tmp = WinList;
         WinList = WinList->win_next;
         if (tmp->win) {
-            SDL_DestroyWindow(tmp->win->sdlWin);
             vkDestroyInstance(tmp->win->inst, NULL);
+            SDL_DestroyWindow(tmp->win->sdlWin);
         }
         else printWarning("DESTROYING WINDOW SDL OR VULKAN ERROR");
         Debug printPrimary("DESTROYING WINDOW WITH UUID:");
@@ -122,6 +129,7 @@ bool createInstance(Win *win, const char * name) {
             .minor = 1,
             .patch = 70
     };
+
     /**
      * get required extensions count
      * populate required_extension_names
@@ -203,6 +211,121 @@ bool createInstance(Win *win, const char * name) {
     return true;
 }
 
+/**
+ *
+ * @param Win
+ * @return Boolean
+ */
+
+bool pickPhysicalDevice(Win *win) {
+    win->physicalDevice = VK_NULL_HANDLE;
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(win->inst, &deviceCount, NULL);
+    if (deviceCount == 0) {
+        Debug printError("FAILED TO RETRIEVE PHYSICAL DEVICE WITH VULKAN SUPPORT");
+        return false;
+    }
+    VkPhysicalDevice devices[deviceCount];
+    vkEnumeratePhysicalDevices(win->inst, &deviceCount, devices);
+
+    DeviceRateList candidates[deviceCount];
+
+    Debug printPrimary("LIST OF USABLE DEVICES");
+    for (int i = 0; i < deviceCount; i++) {
+        uint32_t score = rateDeviceSuitability(devices[i]);
+        candidates[i] = (DeviceRateList) {
+                .rate = score,
+                .device = devices[i]
+        };
+
+        // 1
+        // TODO THIS IS USED ONLY FOR PRINT DEVICES NAMES AT THIS POINT, below there is the correct place to define and store device
+        if (isDeviceSuitable(devices[i])) {
+            break;
+        }
+    }
+    // * 1 ^ REMOVE
+    win->physicalDevice = VK_NULL_HANDLE;
+
+    VkPhysicalDevice best = getBestDeviceByRate(candidates, deviceCount);
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(best, &deviceProperties);
+    Debug printPrimary("BEST DEVICE FOUND:");
+
+    if (isDeviceSuitable(best)) {
+        win->physicalDevice = best;
+    }
+
+    if (win->physicalDevice == VK_NULL_HANDLE) {
+        Debug printError("FAILED TO FIND A SUITABLE GPU!");
+        return false;
+    }
+    return true;
+
+}
+
+/**
+ *
+ * @param VkPhysicalDevice
+ * @return Boolean
+ */
+bool isDeviceSuitable(VkPhysicalDevice device) {
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+    Debug printWarning(deviceProperties.deviceName);
+
+    return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader;
+}
+
+VkPhysicalDevice getBestDeviceByRate(DeviceRateList candidates[], uint32_t count) {
+    DeviceRateList current;
+    for (int x = 0; x < count; x++) {
+        if (x > 0) {
+            if (candidates[x].rate > current.rate) {
+                current = candidates[x];
+            }
+        }else{
+            current = candidates[x];
+        }
+    }
+    return current.device;
+}
+
+uint32_t rateDeviceSuitability(VkPhysicalDevice device) {
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+    uint32_t score = 0;
+
+    // Discrete GPUs have a significant performance advantage
+    if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+        score += 1000;
+    }
+
+    // Maximum possible size of textures affects graphics quality
+    score += deviceProperties.limits.maxImageDimension2D;
+
+    // Application can't function without geometry shaders
+    if (!deviceFeatures.geometryShader) {
+        return 0;
+    }
+
+    return score;
+}
+
+//QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
+//    QueueFamilyIndices indices;
+//    // Logic to find queue family indices to populate struct with
+//    return indices;
+//}
+
 bool createSurface(Win *win){
     if (!SDL_Vulkan_CreateSurface(win->sdlWin, win->inst, &win->surface)) {
         return false;
@@ -210,6 +333,8 @@ bool createSurface(Win *win){
     return true;
 }
 
+
+// TODO Message callback for validation layer
 bool enableValidationLayers(VkInstanceCreateInfo *createInstanceInfo) {
     int validation_layer_count = 1;
     const char *validationLayers[validation_layer_count];

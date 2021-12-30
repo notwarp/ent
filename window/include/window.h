@@ -24,6 +24,11 @@
 #endif
 
 typedef struct VERSION_T version_r;
+typedef struct QUEUE_FAMILY_INDICES QueueFamilyIndices;
+typedef struct DEVICE_RATE_T {
+    uint32_t rate;
+    VkPhysicalDevice device;
+} DeviceRateList;
 typedef struct WINDOW Win;
 typedef struct WINDOW_T Win_t;
 
@@ -36,6 +41,11 @@ char * getWindowUUID(Win * win);
 void destroyWindow(Win * win);
 void cleanWindowList();
 bool createInstance(Win *win, const char * name);
+bool pickPhysicalDevice(Win *win);
+bool isDeviceSuitable(VkPhysicalDevice device);
+VkPhysicalDevice getBestDeviceByRate(DeviceRateList candidates[], uint32_t count);
+uint32_t rateDeviceSuitability(VkPhysicalDevice device);
+QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 bool createSurface(Win *win);
 bool enableValidationLayers(VkInstanceCreateInfo *createInstanceInfo);
 bool checkValidationLayerSupport(VkInstanceCreateInfo *createInstanceInfo, const char *validationLayers[]);
